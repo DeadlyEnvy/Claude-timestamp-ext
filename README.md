@@ -32,15 +32,15 @@ auto-detected from your browser.
 
 ## Why this design
 
-The obvious way to build this would be to intercept the fetch request to
-Claude's API and modify the message body in transit. That approach is more
-robust against DOM changes, but it's also a skeleton key: the same hook gives
-access to auth headers, session tokens, and full request/response bodies.
-Fork it, change a few lines, and you have a credential exfiltrator.
+The obvious way to build this would be to operate at the network layer —
+intercepting API requests and modifying them in transit. That approach is more
+robust against DOM changes, but it requires permissions that are dangerously
+overpowered for the task. Any extension with network-level access has a much
+larger attack surface if forked or compromised.
 
 This extension takes the opposite approach. It puts text into a text box.
-That's the entire capability surface. The mechanism cannot be repurposed for
-anything dangerous because it never operates at the network layer.
+That's the entire capability surface. It never touches the network layer, so
+the permissions footprint is as small as it can possibly be.
 
 The tradeoff is fragility — if Anthropic changes their DOM structure, the
 editor selector may break. But a broken selector is obvious (timestamps stop
