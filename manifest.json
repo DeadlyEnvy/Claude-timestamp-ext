@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Claude Timestamp",
+  "version": "1.0.0",
+  "description": "Prepends the current date and time to every message sent on claude.ai, making Claude aware of the current time.",
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
