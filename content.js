@@ -58,6 +58,13 @@
     return text.length > 0;
   }
 
+  // Check if the editor already starts with a timestamp to prevent stacking.
+  // Matches the pattern: [Day, Mon DD, YYYY, H:MM AM/PM TZ]
+  function editorAlreadyHasTimestamp(editor) {
+    const text = editor.innerText.trimStart();
+    return /^\[[A-Z][a-z]{2},\s/.test(text);
+  }
+
   // --- Timestamp injection ---
   // Moves cursor to position 0 in the editor, inserts the timestamp line,
   // then lets the original event (Enter / click) propagate to send the message.
@@ -111,11 +118,12 @@
     if (justInjected) return;
     const editor = findEditor();
     if (!editor || !editorHasContent(editor)) return;
+    if (editorAlreadyHasTimestamp(editor)) return;
 
     if (prependTimestamp(editor)) {
       justInjected = true;
-      // Reset the guard after a short delay (enough for the send to process)
-      setTimeout(() => { justInjected = false; }, 200);
+      // Reset the guard after a longer delay to be safe
+      setTimeout(() => { justInjected = false; }, 2000);
     }
   }
 
