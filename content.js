@@ -150,9 +150,13 @@
     const editor = findEditor();
     if (!editor || !editorHasContent(editor)) return;
 
+    // Exclude buttons that are clearly not the send button:
+    // dropdowns, menus, model selectors, popover triggers, etc.
+    if (isNonSendButton(button)) return;
+
     // Check if this button is plausibly a send button:
-    // - It's in the same parent container as the editor
-    // - OR it has an aria-label suggesting "send"
+    // - It has an aria-label suggesting "send"
+    // - OR it's within the immediate vicinity of the editor
     const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
     const isSendButton =
       ariaLabel.includes('send') ||
@@ -164,12 +168,38 @@
     }
   }, true); // true = capturing phase
 
-  // Check if a button and the editor share a common ancestor within 5 levels.
+  // Exclude buttons that are UI controls rather than the send button.
+  // The model selector, attachment menus, and other dropdowns share the
+  // same composer area, so proximity alone can't distinguish them.
+  function isNonSendButton(button) {
+    // Buttons that open menus or popups
+    if (button.getAttribute('aria-haspopup')) return true;
+    if (button.getAttribute('aria-expanded') !== null) return true;
+
+    // Buttons with roles indicating non-send controls
+    const role = (button.getAttribute('role') || '').toLowerCase();
+    if (['combobox', 'listbox', 'menu', 'menuitem', 'option', 'tab'].includes(role)) return true;
+
+    // Check aria-label for known non-send patterns
+    const ariaLabel = (button.getAttribute('aria-label') || '').toLowerCase();
+    const nonSendLabels = ['model', 'attach', 'upload', 'menu', 'close', 'cancel',
+                           'stop', 'toggle', 'expand', 'collapse', 'settings',
+                           'copy', 'edit', 'delete', 'retry', 'regenerate'];
+    if (nonSendLabels.some(label => ariaLabel.includes(label))) return true;
+
+    // Buttons inside elements with popover-like roles
+    const popoverParent = button.closest('[role="dialog"], [role="menu"], [role="listbox"], [role="combobox"], [data-radix-popper-content-wrapper]');
+    if (popoverParent) return true;
+
+    return false;
+  }
+
+  // Check if a button and the editor share a common ancestor within 4 levels.
   // This is a conservative heuristic to avoid triggering on unrelated buttons
-  // (e.g., sidebar navigation, settings).
+  // (e.g., sidebar navigation, settings, model selector dropdowns).
   function buttonIsNearEditor(button, editor) {
     let ancestor = editor;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       if (!ancestor || ancestor === document.body) return false;
       ancestor = ancestor.parentElement;
       if (ancestor && ancestor.contains(button)) return true;
